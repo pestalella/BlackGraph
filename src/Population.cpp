@@ -1,5 +1,7 @@
 #include "Population.h"
 
+#include <random>
+
 NGraph::Graph complete_graph(unsigned int nverts)
 {
     NGraph::Graph k;
@@ -18,6 +20,13 @@ NGraph::Graph complete_graph(unsigned int nverts)
     return k;
 }
 
+float get_random()
+{
+    static std::default_random_engine e;
+    static std::uniform_real_distribution<> dis(0, 1); // rage 0 - 1
+    return static_cast<float>(dis(e));
+}
+
 Population::Population(unsigned int pop_size) :
     social_links(complete_graph(pop_size)),
     status(pop_size),
@@ -29,15 +38,31 @@ Population::Population(unsigned int pop_size) :
     }
 }
 
-unsigned int Population::num_infected()
+unsigned int Population::num_in_state(HealthState state)
 {
-    unsigned int infected_count = 0;
+    unsigned int count = 0;
 
     for (auto vert = social_links.begin(); vert != social_links.end(); ++vert) {
-        if (status[social_links.node(vert)] == HealthState::INFECTED)
-            ++infected_count;
+        if (status[social_links.node(vert)] == state)
+            ++count;
     }
-    return infected_count;
+    return count;
+
+}
+
+unsigned int Population::num_infected()
+{
+    return num_in_state(HealthState::INFECTED);
+}
+
+unsigned int Population::num_recovered()
+{
+    return num_in_state(HealthState::RECOVERED);
+}
+
+unsigned int Population::num_healthy()
+{
+    return num_in_state(HealthState::UNINFECTED);
 }
 
 void Population::start_infection()
@@ -48,8 +73,22 @@ void Population::start_infection()
 void Population::advance_infection()
 {
     for (auto vert = social_links.begin(); vert != social_links.end(); ++vert) {
-        
+        for (auto neighbor : social_links.out_neighbors(vert)) {
+            if (status[neighbor] == HealthState::UNINFECTED) {
+                if (get_random() < INFECTION_PROB) {
+                    status[neighbor] = HealthState::INFECTED;
+                }
+            }
+        }
+    }
+    
+    for (auto vert = social_links.begin(); vert != social_links.end(); ++vert) {
+        unsigned int vertIdx = social_links.node(vert);
+        if (status[vertIdx] == HealthState::INFECTED) {
+            ++sick_days[vertIdx];
+        }
+        if (sick_days[vertIdx] > 10) {
+            status[vertIdx] = HealthState::RECOVERED;
+        }
     }
 }
-
-
