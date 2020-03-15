@@ -6,14 +6,10 @@ int main()
 
     Population pop(numVerts);
 
-
-
-    //std::cout << "Node 0 neighbors: [";
-    //for (auto vert : k.out_neighbors(0)) {
-    //    std::cout << vert << ", ";
-    //}
-    //std::cout << "]" << std::endl;
-
-    
+    pop.start_infection();
+    for (int i = 0; i < 100; ++i) {
+        std::cout << "Day " << i << " total population:" << pop.size() << " infected:" << pop.num_infected() << std::endl;
+        pop.advance_infection();
+    }
 }
 
